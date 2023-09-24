@@ -51,10 +51,38 @@ else
     systemctl restart pdnsd
 fi
 
+# 定义函数来处理DNS规则配置
+configure_dns_rules() {
+    # 初始化SERVER_RULES变量为空字符串
+    SERVER_RULES=""
+
+    # 读取proxy_dns.txt文件的每一行
+    while IFS= read -r line; do
+        # 去除前后的空白
+        trimmed_line="$(echo -e "${line}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+
+        # 如果行不为空，则添加server规则到SERVER_RULES变量
+        if [ -n "$trimmed_line" ]; then
+            SERVER_RULES+="server=/$trimmed_line/127.0.0.1#$PROXY_DNS_PORT\n"
+        fi
+    done < "proxy_dns.txt"
+
+    # 拷贝dnsmasq.conf.example文件到/etc/dnsmasq.conf
+    cp "${SCRIPT_DIR}/dnsmasq.conf.example" /etc/dnsmasq.conf
+
+    # 替换文件中的${SERVER_RULES}和${DEFAULT_NAMESERVER}
+    sed -i "s|\${SERVER_RULES}|$SERVER_RULES|g" /etc/dnsmasq.conf
+    sed -i "s|\${DEFAULT_NAMESERVER}|$DEFAULT_NAMESERVER|g" /etc/dnsmasq.conf
+}
+
 # 检查dnsmasq服务是否已经存在
 if systemctl is-active --quiet dnsmasq; then
     # 如果服务已存在，只更新配置文件
     echo "dnsmasq service already exists, updating configuration..."
+
+    # 调用函数来配置DNS规则
+    configure_dns_rules
+
     # 这里添加更新dnsmasq配置文件的命令
     systemctl restart dnsmasq
 else
@@ -78,29 +106,7 @@ else
         systemctl stop systemd-resolved
     fi
 
-    # 定义函数来处理DNS规则配置
-    configure_dns_rules() {
-        # 初始化SERVER_RULES变量为空字符串
-        SERVER_RULES=""
 
-        # 读取proxy_dns.txt文件的每一行
-        while IFS= read -r line; do
-            # 去除前后的空白
-            trimmed_line="$(echo -e "${line}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-
-            # 如果行不为空，则添加server规则到SERVER_RULES变量
-            if [ -n "$trimmed_line" ]; then
-                SERVER_RULES+="server=/$trimmed_line/127.0.0.1#$PROXY_DNS_PORT\n"
-            fi
-        done < "proxy_dns.txt"
-
-        # 拷贝dnsmasq.conf.example文件到/etc/dnsmasq.conf
-        cp "${SCRIPT_DIR}/dnsmasq.conf.example" /etc/dnsmasq.conf
-
-        # 替换文件中的${SERVER_RULES}和${DEFAULT_NAMESERVER}
-        sed -i "s|\${SERVER_RULES}|$SERVER_RULES|g" /etc/dnsmasq.conf
-        sed -i "s|\${DEFAULT_NAMESERVER}|$DEFAULT_NAMESERVER|g" /etc/dnsmasq.conf
-    }
     # 调用函数来配置DNS规则
     configure_dns_rules
 
