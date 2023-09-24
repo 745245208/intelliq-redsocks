@@ -1,39 +1,44 @@
-# 一、简介
+# 简介
 
-实现 Linux 下的全局翻墙，使用 redsocks 配合 iptables 实现请求流量的转发
+本项目实现了在 Linux 系统下的全局翻墙方案，其中包括两部分：
 
-有的时候在实验环境中下载一些被`GFW`给墙掉的资源会出现下载不到的情况，好在网上有大神使用`C`写了一个库可以将将本地的流量从一个端口转向`Socket5`的端口，我们再使用一个`SSH -D`参数本地启动一个`Socket5`端口，使用`redsocks`将流量转到对应的`Socket5`上。这样就是就可以实现任何流量都可以翻墙了，由于官方的`redsocks`并没有提供`iptables`的配置方法，所以我写了一个脚本，自动的读取配置文件啥的，帮助快速使用。
+1. **使用 redsocks 配合 iptables 代理 TCP 连接：**
 
-感谢大神的项目，详细参见[此处 Github 主页](https://github.com/darkk/redsocks)。
+   此部分使用 iptables 将指定的 TCP 连接代理到 redsocks，然后使用 redsocks 将流量转发到配置的 Socket5 代理服务器上。
 
-# 一、使用方法
+2. **使用 dnsmasq 和 pdnsd 代理 DNS 请求：**
 
-本人已经针对`redsocks`的一个稳定版本编译好了一个直接可以运行的二进制文件，使用`alpine musl gilbc`编译，因此可以不需要安装依赖直接使用，提供了`x86`和`aarch64`两个版本，使用方法如下
+   此部分配置了 dnsmasq 和 pdnsd，以代理系统的 DNS 请求。dnsmasq 将本地的 DNS 请求转发给 pdnsd，而 pdnsd 将 DNS 请求发送到 Socket5 代理服务器。整个 DNS 请求流程如下所示：
 
-1. 安装
+   本地应用程序 (resolv.conf) <-------> dnsmasq:53 (UDP) <-------> pdnsd:5300 (TCP) <-------> redsocks <-------> Socket5 代理服务器
+
+# 使用 redsocks 配合 iptables 代理 TCP 连接
+
+为了方便使用，我们提供了一个针对 `redsocks` 的预编译版本，无需手动安装依赖，可用于 x86 和 aarch64 架构的系统。以下是使用方法：
+
+## 安装
 
 ```bash
 Shell> git clone 本仓库
 Shell> ./install_redsocks.sh
-please tell me you sock_server:127.0.0.1 #输入socket5代理服务器的地址
-please tell me you sock_port:7070        #输入socket5代理服务器的端口
+please tell me you sock_server:127.0.0.1 # 输入 Socket5 代理服务器的地址
+please tell me you sock_port:7070        # 输入 Socket5 代理服务器的端口
 ```
 
-2. 启动 redsocks
+## 启动 redsocks
 
 ```bash
 Shell > service redsocks start
-
 ```
 
-3. 选择代理模式
+## 选择代理模式
 
 **全局代理模式**
 
 ```bash
-Shell>   proxyall      #启动全局代理模式，此模式下将代理所有的访问
+Shell> proxyall      # 启动全局代理模式，此模式下将代理所有的访问
 
- your iptabls OUTPUT chain like this....
+ your iptables OUTPUT chain like this....
  Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
  num   pkts bytes target     prot opt in     out     source               destination
 
@@ -53,14 +58,14 @@ Shell>   proxyall      #启动全局代理模式，此模式下将代理所有�
 
 **代理指定主机**
 
-该模式下只代理`GFlist.txt`中指定的主机
+此模式下仅代理 `GFlist.txt` 中指定的主机。
 
 ```bash
 Shell> proxy
 
 this ip[216.58.194.99] will use proxy connected ....
 this ip[180.97.33.107] will use proxy connected ....
-your iptabls OUTPUT chain like this....
+your iptables OUTPUT chain like this....
    Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
    num   pkts bytes target     prot opt in     out     source               destination
 
@@ -77,23 +82,41 @@ your iptabls OUTPUT chain like this....
 
    Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
    num   pkts bytes target     prot opt in     out     source               destination
-
 ```
 
-4. 清理代理与关闭代理
+## 清理代理与关闭代理
 
 ```bash
-
-Shell> iptables -t nat -F                  #清理所有的代理模式
-Shell> service redsocks stop             #关闭代理
-
-
+Shell> iptables -t nat -F                  # 清理所有的代理模式
+Shell> service redsocks stop             # 关闭代理
 ```
 
-# 静态编译方法
+# 使用 dnsmasq 和 pdnsd 代理 DNS 请求
+
+使用此部分可代理系统的 DNS 请求。以下是使用方法：
+
+## 安装
 
 ```bash
-
-apk --no-cache add busybox-extras musl-dev linux-headers libevent-static libevent-dev musl-dev gcc make vim bash
-
+Shell> git clone 本仓库
+Shell> ./install_dns.sh
+Please enter PROXY_DNS_PORT (default: 5300): # 输入 pdnsd 的监听端口
+Please enter DEFAULT_NAMESERVER (default: $DEFAULT_NAMESERVER): # 输入默认的 DNS 服务器
 ```
+
+## 修改代理的 DNS 名单
+
+需要在 `proxy_dns.txt` 中添加域名，每行一个。使用 `.` 作为前缀将匹配所有子域名，例如：
+
+```bash
+.google.com
+.youtube.com
+```
+
+修改后重新执行脚本：
+
+```bash
+Shell> ./install_dns.sh
+```
+
+
