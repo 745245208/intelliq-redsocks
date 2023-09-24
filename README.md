@@ -104,6 +104,8 @@ Please enter PROXY_DNS_PORT (default: 5300): # 输入 pdnsd 的监听端口
 Please enter DEFAULT_NAMESERVER (default: $DEFAULT_NAMESERVER): # 输入默认的 DNS 服务器
 ```
 
+注意可能linux会自动覆盖 `/etc/resolv.conf`，导致 DNS 请求不会被代理，此时需要手动修改 `/etc/resolv.conf`，将 `nameserver` 修改为 `127.0.0.1`.
+
 ## 修改代理的 DNS 名单
 
 需要在 `proxy_dns.txt` 中添加域名，每行一个。使用 `.` 作为前缀将匹配所有子域名，例如：
