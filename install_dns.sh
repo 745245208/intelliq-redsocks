@@ -34,6 +34,13 @@ if service pdnsd status >/dev/null 2>&1; then
 else
     # 如果服务不存在，执行安装和配置
     echo "pdnsd service does not exist, installing and configuring..."
+
+    # 检查端口是否已经被占用
+    if netstat -tuln | grep ":$PROXY_DNS_PORT " >/dev/null; then
+        echo "Error: Port $PROXY_DNS_PORT is already in use."
+        exit 1
+    fi
+    
     # 安装pdnsd
     arch=$(dpkg --print-architecture)
     package_name="pdnsd_1.2.9a-par-3"
