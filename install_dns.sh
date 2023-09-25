@@ -22,7 +22,7 @@ fi
 update_pdnsd_config(){
     cat default_pdnsd.example > /etc/default/pdnsd
     cat pdnsd.conf.example > /etc/pdnsd.conf
-    sed -i "s|\${$PROXY_DNS_PORT}|$PROXY_DNS_PORT|g" /etc/pdnsd.conf
+    sed -i "s|\${PROXY_DNS_PORT}|$PROXY_DNS_PORT|g" /etc/pdnsd.conf
 }
 
 # 检查pdnsd服务是否已经存在
