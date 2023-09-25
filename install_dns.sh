@@ -19,13 +19,18 @@ else
     echo "DEFAULT_NAMESERVER=$DEFAULT_NAMESERVER" >> dnsserverinfo
 fi
 
+update_pdnsd_config(){
+    cat default_pdnsd.example > /etc/default/pdnsd
+    cat pdnsd.conf.example > /etc/pdnsd.conf
+    sed -i "s|\${$PROXY_DNS_PORT}|$PROXY_DNS_PORT|g" /etc/pdnsd.conf
+}
+
 # 检查pdnsd服务是否已经存在
-if systemctl is-active --quiet pdnsd; then
+if service pdnsd status >/dev/null 2>&1; then
     # 如果服务已存在，只更新配置文件
     echo "pdnsd service already exists, updating configuration..."
-    # 这里添加更新pdnsd配置文件的命令
-    sed -i "s|\${$PROXY_DNS_PORT}|$PROXY_DNS_PORT|g" /etc/pdnsd.conf
-    systemctl restart pdnsd
+    update_pdnsd_config
+    service pdnsd restart
 else
     # 如果服务不存在，执行安装和配置
     echo "pdnsd service does not exist, installing and configuring..."
@@ -45,10 +50,8 @@ else
     echo "Installing $deb_file"
     dpkg -i "$deb_file"
 
-    cat default_pdnsd.example > /etc/default/pdnsd
-    cat pdnsd.conf.example > /etc/pdnsd.conf
-    sed -i "s|\${$PROXY_DNS_PORT}|$PROXY_DNS_PORT|g" /etc/pdnsd.conf
-    systemctl restart pdnsd
+    update_pdnsd_config
+    service pdnsd restart
 fi
 
 # 定义函数来处理DNS规则配置
@@ -76,7 +79,7 @@ configure_dns_rules() {
 }
 
 # 检查dnsmasq服务是否已经存在
-if systemctl is-active --quiet dnsmasq; then
+if service dnsmasq status >/dev/null 2>&1; then
     # 如果服务已存在，只更新配置文件
     echo "dnsmasq service already exists, updating configuration..."
 
@@ -84,7 +87,7 @@ if systemctl is-active --quiet dnsmasq; then
     configure_dns_rules
 
     # 这里添加更新dnsmasq配置文件的命令
-    systemctl restart dnsmasq
+    service dnsmasq restart
 else
     # 如果服务不存在，执行安装和配置
     echo "dnsmasq service does not exist, installing and configuring..."
@@ -101,23 +104,19 @@ else
     fi
 
     # 启用或禁用相应的服务
-    if systemctl is-active --quiet systemd-resolved; then
+    if service systemd-resolved status >/dev/null 2>&1; then
+        service systemd-resolved stop
         systemctl disable systemd-resolved
-        systemctl stop systemd-resolved
     fi
-
 
     # 调用函数来配置DNS规则
     configure_dns_rules
 
     # 重启dnsmasq服务
-    systemctl restart dnsmasq
+    service dnsmasq restart
 
     # 配置/etc/resolv.conf文件
     echo "nameserver 127.0.0.1" > /etc/resolv.conf
     # 锁定/etc/resolv.conf文件
     chattr +i /etc/resolv.conf
 fi
-
-
-
