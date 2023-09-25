@@ -102,6 +102,32 @@ Shell> git clone 本仓库
 Shell> ./install_dns.sh
 Please enter PROXY_DNS_PORT (default: 5300): # 输入 pdnsd 的监听端口
 Please enter DEFAULT_NAMESERVER (default: $DEFAULT_NAMESERVER): # 输入默认的 DNS 服务器
+
+┌─────────────────────────────────────────────┤ pdnsd ├─────────────────────────────────────────────┐
+│ Please select the pdnsd configuration method that best meets your needs.                          │
+│                                                                                                   │
+│  - Use resolvconf  : use informations provided by resolvconf.                                     │
+│  - Use root servers: make pdnsd behave like a caching, recursive DNS                              │
+│                      server.                                                                      │
+│  - Manual          : completely manual configuration. The pdnsd daemon                            │
+│                      will not start until you edit /etc/pdnsd.conf and                            │
+│                      /etc/default/pdnsd.                                                          │
+│                                                                                                   │
+│                                                                                                   │
+│ Note: If you already use a DNS server that listens to 127.0.0.1:53, you have to choose "Manual".  │
+│                                                                                                   │
+│ General type of pdnsd configuration:                                                              │
+│                                                                                                   │
+│                                         Use resolvconf                                            │
+│                                         Use root servers                                          │
+│                                         Manual                                                    │
+│                                                                                                   │
+│                                                                                                   │
+│                                              <Ok>                                                 │
+│                                                                                                   │
+└───────────────────────────────────────────────────────────────────────────────────────────────────┘
+# 选择Manual
+
 ```
 
 注意可能linux会自动覆盖 `/etc/resolv.conf`，导致 DNS 请求不会被代理，此时需要手动修改 `/etc/resolv.conf`，将 `nameserver` 修改为 `127.0.0.1`.
