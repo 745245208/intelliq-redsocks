@@ -3,10 +3,6 @@ cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd
 binfile="redsocks_$(uname --machine)"
 cp ${binfile} /usr/bin/redsocks
 
-if [[ ! -d /etc/redsocksenv ]]; then
-    touch /etc/redsocksenv
-fi
-
 SOCK_SERVER="127.0.0.1" # Socket5代理服务器
 SOCK_PORT="7070"        # Socket5代理端口
 PROXY_PORT="12345"      # redsock的监听端口
@@ -14,7 +10,9 @@ PROXY_PORT="12345"      # redsock的监听端口
 rm -rf redsocks.conf
 cp redsocks.conf.example /etc/redsocks.conf
 
-if [[ ! -f proxyserverinfo ]]; then
+CONFIG_FILE="/etc/redsocksenv"
+
+if [[ ! -f $CONFIG_FILE ]]; then
     # 本地不存在代理服务器的配置
     read -p "Please tell me your sock_server: " sock_server
     if [[ ${sock_server} != "" ]]; then
@@ -26,12 +24,19 @@ if [[ ! -f proxyserverinfo ]]; then
         SOCK_PORT=${sock_port}
     fi
 
-    echo "${SOCK_SERVER}:${SOCK_PORT}" > proxyserverinfo
+    read -p "Please tell me your proxy_port: " proxy_port
+    if [[ ${PROXY_PORT} != "" ]]; then
+        PROXY_PORT=${proxy_port}
+    fi
+
+    echo "SOCK_SERVER=${SOCK_SERVER}" > $CONFIG_FILE
+    echo "SOCK_PORT=${SOCK_PORT}" >> $CONFIG_FILE
+    echo "PROXY_PORT=${PROXY_PORT}" >> $CONFIG_FILE
 else
     # 本地已经存在了代理服务的配置信息,直接读取就好了
-    SOCK_SERVER=$(head -n 1 proxyserverinfo | awk -F: '{print $1}')
-    SOCK_PORT=$(head -n 1 proxyserverinfo | awk -F: '{print $2}')
+    source $CONFIG_FILE
 fi
+
 
 # 函数用于更新 redsocks.conf 文件
 update_redsocks_conf() {
@@ -48,17 +53,32 @@ update_redsocks_conf
 if [[ $(ps -p 1 -o comm=) == "systemd" ]]; then
     # systemd 初始化系统的服务管理命令
     cp redsocks.service /lib/systemd/system/
-	sed -i 's/SOCK_SERVER/'${SOCK_SERVER}'/g' /lib/systemd/system/redsocks.service
+    sed -i 's/SOCK_SERVER/'${SOCK_SERVER}'/g' /lib/systemd/system/redsocks.service
     systemctl daemon-reload
     systemctl enable redsocks.service
-    systemctl start redsocks.service
+
+    # 检查服务是否已经存在
+    if systemctl is-active --quiet redsocks; then
+        echo "redsocks service already exists, restarting..."
+        systemctl restart redsocks.service
+    else
+        systemctl start redsocks.service
+    fi
 else
     # SysV init 初始化系统的服务管理命令
     cp redsocks-service /etc/init.d/redsocks
-	sed -i 's/SOCK_SERVER/'${SOCK_SERVER}'/g' /etc/init.d/redsocks
+    sed -i 's/SOCK_SERVER/'${SOCK_SERVER}'/g' /etc/init.d/redsocks
     chmod +x /etc/init.d/redsocks
-    service redsocks start
+
+    # 检查服务是否已经存在
+    if service redsocks status >/dev/null 2>&1; then
+        echo "redsocks service already exists, restarting..."
+        service redsocks restart
+    else
+        service redsocks start
+    fi
 fi
+
 
 # 复制代理设置
 /bin/cp NoProxy.txt /etc/NoProxy.txt
