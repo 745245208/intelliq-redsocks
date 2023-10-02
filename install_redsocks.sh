@@ -1,11 +1,12 @@
 #!/bin/bash
-cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd
+cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd
 binfile="redsocks_$(uname --machine)"
-cp ${binfile} /usr/bin/redsocks
+cp "${binfile}" /usr/bin/redsocks
 
-SOCK_SERVER="127.0.0.1" # Socket5代理服务器
-SOCK_PORT="7070"        # Socket5代理端口
-PROXY_PORT="12345"      # redsock的监听端口
+# 默认值
+DEFAULT_SOCK_SERVER="127.0.0.1"
+DEFAULT_SOCK_PORT="7070"
+DEFAULT_PROXY_PORT="12345"
 
 rm -rf redsocks.conf
 cp redsocks.conf.example /etc/redsocks.conf
@@ -14,26 +15,20 @@ CONFIG_FILE="/etc/redsocksenv"
 
 if [[ ! -f $CONFIG_FILE ]]; then
     # 本地不存在代理服务器的配置
-    read -p "Please tell me your sock_server: " sock_server
-    if [[ ${sock_server} != "" ]]; then
-        SOCK_SERVER=$sock_server
-    fi
+    read -p "Please tell me your sock_server (default: ${DEFAULT_SOCK_SERVER}): " sock_server
+    SOCK_SERVER="${sock_server:-${DEFAULT_SOCK_SERVER}}"
 
-    read -p "Please tell me your sock_port: " sock_port
-    if [[ ${SOCK_PORT} != "" ]]; then
-        SOCK_PORT=${sock_port}
-    fi
+    read -p "Please tell me your sock_port (default: ${DEFAULT_SOCK_PORT}): " sock_port
+    SOCK_PORT="${sock_port:-${DEFAULT_SOCK_PORT}}"
 
-    read -p "Please tell me your proxy_port: " proxy_port
-    if [[ ${PROXY_PORT} != "" ]]; then
-        PROXY_PORT=${proxy_port}
-    fi
+    read -p "Please tell me your proxy_port (default: ${DEFAULT_PROXY_PORT}): " proxy_port
+    PROXY_PORT="${proxy_port:-${DEFAULT_PROXY_PORT}}"
 
     echo "SOCK_SERVER=${SOCK_SERVER}" > $CONFIG_FILE
     echo "SOCK_PORT=${SOCK_PORT}" >> $CONFIG_FILE
     echo "PROXY_PORT=${PROXY_PORT}" >> $CONFIG_FILE
 else
-    # 本地已经存在了代理服务的配置信息,直接读取就好了
+    # 本地已经存在了代理服务的配置信息，直接读取就好了
     source $CONFIG_FILE
 fi
 
