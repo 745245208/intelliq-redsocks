@@ -21,8 +21,9 @@
 ```bash
 Shell> git clone 本仓库
 Shell> ./install_redsocks.sh
-please tell me you sock_server:127.0.0.1 # 输入 Socket5 代理服务器的地址
-please tell me you sock_port:7070        # 输入 Socket5 代理服务器的端口
+please tell me your sock_server (default: 127.0.0.1): # 输入 Socket5代理服务器的地址（默认为 127.0.0.1）
+please tell me your sock_port (default: 7070):        # 输入 Socket5代理服务器的端口（默认为 7070）
+Please tell me your proxy_port (default: 12345):      # 输入 Redsock的监听端口（默认为 12345）
 ```
 
 ## 启动 redsocks
