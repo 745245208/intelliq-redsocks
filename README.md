@@ -149,3 +149,52 @@ Shell> ./install_dns.sh
 ```
 
 
+
+## 问题排查
+
+如果您在使用此代理方法时遇到问题，可以按照以下步骤进行问题排查：
+
+1. **检查DNS解析是否成功**：使用`dig`命令检查是否可以成功解析域名，例如：
+
+   ```bash
+   dig github.com
+   ```
+
+2. **检查redsocks配置**：
+  尝试使用TCP代理到8.8.8.8进行解析：
+
+   ```bash
+   dig +tcp @8.8.8.8 github.com
+   ```
+
+  如果DNS解析仍然不成功，需要确保redsocks是否正常运行。您可以检查redsocks的配置和状态以确保它正常工作。
+
+3. **检查`/etc/resolv.conf`**：查看`/etc/resolv.conf`文件，确保`nameserver`设置为`127.0.0.1`，这是代理DNS请求所需的设置。如果不是，请手动修改：
+
+   ```bash
+   cat /etc/resolv.conf
+   ```
+
+4. **检查dnsmasq状态**：使用以下命令检查`dnsmasq`是否正常运行：
+
+   ```bash
+   service dnsmasq status
+   ```
+
+   如果`dnsmasq`状态不正常，可以使用以下命令启动它：
+
+   ```bash
+   service dnsmasq start
+   ```
+
+5. **检查pdnsd状态**：使用以下命令检查`pdnsd`是否正常运行：
+
+   ```bash
+   service pdnsd status
+   ```
+
+   如果`pdnsd`状态不正常，可以使用以下命令启动它：
+
+   ```bash
+   service pdnsd start
+   ```
