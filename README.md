@@ -149,52 +149,71 @@ Shell> ./install_dns.sh
 ```
 
 
-
 ## 问题排查
 
-如果您在使用此代理方法时遇到问题，可以按照以下步骤进行问题排查：
+如果您在解析 DNS 时遇到问题，可以按照以下步骤进行问题排查：
 
-1. **检查DNS解析是否成功**：使用`dig`命令检查是否可以成功解析域名，例如：
+### 1. 检查使用 TCP 查找 8.8.8.8 是否成功
 
-   ```bash
-   dig github.com
-   ```
+```shell
+dig +tcp @8.8.8.8 github.com
+```
 
-2. **检查redsocks配置**：
-  尝试使用TCP代理到8.8.8.8进行解析：
+如果不成功，检查 `redsocks` 是否工作正常。
 
-   ```bash
-   dig +tcp @8.8.8.8 github.com
-   ```
+### 2. 检查 `pdnsd` 状态
 
-  如果DNS解析仍然不成功，需要确保redsocks是否正常运行。您可以检查redsocks的配置和状态以确保它正常工作。
+```shell
+dig @127.0.0.1 -p 5300 github.com
+```
 
-3. **检查`/etc/resolv.conf`**：查看`/etc/resolv.conf`文件，确保`nameserver`设置为`127.0.0.1`，这是代理DNS请求所需的设置。如果不是，请手动修改：
+如果不成功，检查 `pdnsd` 是否正常运行：
 
-   ```bash
-   cat /etc/resolv.conf
-   ```
+```shell
+service pdnsd status
+```
 
-4. **检查dnsmasq状态**：使用以下命令检查`dnsmasq`是否正常运行：
+如果 `pdnsd` 状态不正常，可以使用以下命令启动它：
 
-   ```bash
-   service dnsmasq status
-   ```
+```shell
+service pdnsd start
+```
 
-   如果`dnsmasq`状态不正常，可以使用以下命令启动它：
+### 3. 检查默认代理状态
 
-   ```bash
-   service dnsmasq start
-   ```
+```shell
+dig @默认代理IP github.com
+```
 
-5. **检查pdnsd状态**：使用以下命令检查`pdnsd`是否正常运行：
+如果不正常，检查默认代理IP是否正确。修改 `dnsserverinfo` 中的 `DEFAULT_NAMESERVER`，然后重新运行 `./install_dns.sh` 来更新配置。
 
-   ```bash
-   service pdnsd status
-   ```
+### 4. 检查 `dnsmasq` 状态
 
-   如果`pdnsd`状态不正常，可以使用以下命令启动它：
+```shell
+dig @127.0.0.1 github.com
+```
 
-   ```bash
-   service pdnsd start
-   ```
+如果不正常，使用以下命令检查 `pdnsd` 是否正常运行：
+
+```shell
+service pdnsd status
+```
+
+如果 `pdnsd` 状态不正常，可以使用以下命令启动它：
+
+```shell
+service pdnsd start
+```
+
+### 5. 检查 `/etc/resolv.conf`
+查看 `/etc/resolv.conf` 文件，确保 `nameserver` 设置为 `127.0.0.1`，这是代理 DNS 请求所需的设置。如果不是，请手动修改：
+
+```shell
+cat /etc/resolv.conf
+```
+
+### 6. 检查全流程是否成功
+
+```shell
+dig  github.com
+```
