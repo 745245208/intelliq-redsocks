@@ -122,8 +122,14 @@ else
     # 重启dnsmasq服务
     service dnsmasq restart
 
-    # 配置/etc/resolv.conf文件
-    echo "nameserver 127.0.0.1" > /etc/resolv.conf
-    # 锁定/etc/resolv.conf文件
-    chattr +i /etc/resolv.conf
+    # 询问是否修改/etc/resolv.conf的nameserver为127.0.0.1
+    read -p "Do you want to set nameserver in /etc/resolv.conf to 127.0.0.1? (y/n): " set_nameserver
+    if [ "$set_nameserver" == "y" ]; then
+        echo "nameserver 127.0.0.1" > /etc/resolv.conf
+        # 锁定/etc/resolv.conf文件
+        chattr +i /etc/resolv.conf
+        echo "nameserver in /etc/resolv.conf set to 127.0.0.1 and locked."
+    else
+        echo "nameserver in /etc/resolv.conf remains unchanged."
+    fi
 fi
