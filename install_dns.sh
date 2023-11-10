@@ -42,15 +42,44 @@ else
     fi
     
     # 安装pdnsd
-    arch=$(dpkg --print-architecture)
-    package_name="pdnsd_1.2.9a-par-3"
+    # 判断操作系统是基于Debian还是Red Hat
+    if [ -f /etc/os-release ]; then
+        source /etc/os-release
+        if [ "$ID" == "debian" ] || [ "$ID" == "ubuntu" ]; then
+            # 安装pdnsd on Debian/Ubuntu
+			arch=$(dpkg --print-architecture)
+			package_name="pdnsd_1.2.9a-par-3"
 
-    if [ "$arch" == "amd64" ]; then
-        deb_file="${package_name}_amd64.deb"
-    elif [ "$arch" == "i386" ]; then
-        deb_file="${package_name}_i386.deb"
+			if [ "$arch" == "amd64" ]; then
+				deb_file="${package_name}_amd64.deb"
+			elif [ "$arch" == "i386" ]; then
+				deb_file="${package_name}_i386.deb"
+			else
+				echo "Unsupported architecture: $arch"
+				exit 1
+			fi
+     elif [ "$ID" == "fedora" ] || [ "$ID" == "centos" ] || [ "$ID" == "rhel" ]; then
+            # 安装pdnsd on Fedora/CentOS/RHEL
+            arch=$(uname -m)
+            package_name="pdnsd-1.2.9a-par"
+
+            if [ "$arch" == "x86_64" ]; then
+                rpm_file="${package_name}.x86_64.rpm"
+            elif [ "$arch" == "i686" ]; then
+                rpm_file="${package_name}.i686.rpm"
+            else
+                echo "Unsupported architecture: $arch"
+                exit 1
+            fi
+
+            echo "Installing $rpm_file"
+            rpm -i "$rpm_file"
+       else
+            echo "Unsupported distribution: $ID"
+            exit 1
+       fi
     else
-        echo "Unsupported architecture: $arch"
+        echo "Unable to determine the operating system."
         exit 1
     fi
 
