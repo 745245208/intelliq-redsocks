@@ -40,55 +40,43 @@ else
         echo "Error: Port $PROXY_DNS_PORT is already in use."
         exit 1
     fi
-    
+
     # 安装pdnsd
-    # 判断操作系统是基于Debian还是Red Hat
     if [ -f /etc/os-release ]; then
         source /etc/os-release
-        if [ "$ID" == "debian" ] || [ "$ID" == "ubuntu" ]; then
-            # 安装pdnsd on Debian/Ubuntu
-			arch=$(dpkg --print-architecture)
-			package_name="pdnsd_1.2.9a-par-3"
+        case $ID in
+            debian|ubuntu)
+                # 安装pdnsd on Debian/Ubuntu
+                arch=$(dpkg --print-architecture)
+                package_name="pdnsd_1.2.9a-par-3"
+                deb_file="${package_name}_${arch}.deb"
 
-			if [ "$arch" == "amd64" ]; then
-				deb_file="${package_name}_amd64.deb"
-			elif [ "$arch" == "i386" ]; then
-				deb_file="${package_name}_i386.deb"
-			else
-				echo "Unsupported architecture: $arch"
-				exit 1
-			fi
-     elif [ "$ID" == "fedora" ] || [ "$ID" == "centos" ] || [ "$ID" == "rhel" ]; then
-            # 安装pdnsd on Fedora/CentOS/RHEL
-            arch=$(uname -m)
-            package_name="pdnsd-1.2.9a-par"
+                echo "Installing $deb_file"
+                dpkg -i "$deb_file"
+                ;;
+            fedora|centos|rhel)
+                # 安装pdnsd on Fedora/CentOS/RHEL
+                arch=$(uname -m)
+                package_name="pdnsd-1.2.9a-par"
+                rpm_file="${package_name}.${arch}.rpm"
 
-            if [ "$arch" == "x86_64" ]; then
-                rpm_file="${package_name}.x86_64.rpm"
-            elif [ "$arch" == "i686" ]; then
-                rpm_file="${package_name}.i686.rpm"
-            else
-                echo "Unsupported architecture: $arch"
+                echo "Installing $rpm_file"
+                rpm -i "$rpm_file"
+                ;;
+            *)
+                echo "Unsupported distribution: $ID"
                 exit 1
-            fi
-
-            echo "Installing $rpm_file"
-            rpm -i "$rpm_file"
-       else
-            echo "Unsupported distribution: $ID"
-            exit 1
-       fi
+                ;;
+        esac
     else
         echo "Unable to determine the operating system."
         exit 1
     fi
 
-    echo "Installing $deb_file"
-    dpkg -i "$deb_file"
-
     update_pdnsd_config
     service pdnsd restart
 fi
+
 
 # 定义函数来处理DNS规则配置
 configure_dns_rules() {
