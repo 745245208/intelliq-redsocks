@@ -136,6 +136,9 @@ else
     # 调用函数来配置DNS规则
     configure_dns_rules
 
+    # 配置dnsmasq服务自动启动
+    chkconfig dnsmasq on
+    
     # 重启dnsmasq服务
     service dnsmasq restart
 
