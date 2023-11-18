@@ -37,7 +37,7 @@ Shell > service redsocks start
 **全局代理模式**
 
 ```bash
-Shell> proxyall      # 启动全局代理模式，此模式下将代理所有的访问
+Shell> proxy all      # 启动全局代理模式，此模式下将代理所有的访问
 
  your iptables OUTPUT chain like this....
  Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
@@ -62,7 +62,7 @@ Shell> proxyall      # 启动全局代理模式，此模式下将代理所有的
 此模式下仅代理 `GFlist.txt` 中指定的主机。
 
 ```bash
-Shell> proxy
+Shell> proxy gflist
 
 this ip[216.58.194.99] will use proxy connected ....
 this ip[180.97.33.107] will use proxy connected ....
@@ -88,7 +88,7 @@ your iptables OUTPUT chain like this....
 ## 清理代理与关闭代理
 
 ```bash
-Shell> iptables -t nat -F                  # 清理所有的代理模式
+Shell> proxy none                 # 清理所有的代理模式
 Shell> service redsocks stop             # 关闭代理
 ```
 
