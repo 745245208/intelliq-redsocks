@@ -82,3 +82,16 @@ fi
 # 复制代理脚本
 /bin/cp -rf proxy.sh /usr/local/bin/proxy && chmod +x /usr/local/bin/proxy && sed -i 's/SED_SOCK_SERVER/'${SOCK_SERVER}'/g' /usr/local/bin/proxy && sed -i 's/SED_PROXY_PORT/'${PROXY_PORT}'/g' /usr/local/bin/proxy
 
+# 设置启动时自动代理
+if [[ $(ps -p 1 -o comm=) == "systemd" ]]; then
+    # systemd 初始化系统的服务管理命令
+    cp redsocks_proxy.service /lib/systemd/system/
+    systemctl daemon-reload
+    systemctl enable redsocks_proxy.service
+    systemctl restart redsocks_proxy.service
+else
+    # SysV init 初始化系统的服务管理命令
+    cp redsocks_proxy-service /etc/init.d/redsocks_proxy
+    chmod +x /etc/init.d/redsocks_proxy
+    service redsocks restart
+fi
