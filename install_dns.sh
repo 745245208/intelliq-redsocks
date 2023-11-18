@@ -26,12 +26,7 @@ update_pdnsd_config(){
 }
 
 # 检查pdnsd服务是否已经存在
-if service pdnsd status >/dev/null 2>&1; then
-    # 如果服务已存在，只更新配置文件
-    echo "pdnsd service already exists, updating configuration..."
-    update_pdnsd_config
-    service pdnsd restart
-else
+if ! command -v  pdnsd &>/dev/null; then
     # 如果服务不存在，执行安装和配置
     echo "pdnsd service does not exist, installing and configuring..."
 
@@ -72,11 +67,19 @@ else
         echo "Unable to determine the operating system."
         exit 1
     fi
-
-    update_pdnsd_config
-    service pdnsd restart
+else
+    # 如果服务已存在，只更新配置文件
+    echo "pdnsd service already exists, updating configuration..."
 fi
 
+update_pdnsd_config
+if [[ $(ps -p 1 -o comm=) == "systemd" ]]; then
+    # Systemd 系统
+    systemctl restart pdnsd
+else
+    # SysV Init 系统
+    service pdnsd restart
+fi
 
 # 定义函数来处理DNS规则配置
 configure_dns_rules() {
@@ -103,16 +106,7 @@ configure_dns_rules() {
 }
 
 # 检查dnsmasq服务是否已经存在
-if service dnsmasq status >/dev/null 2>&1; then
-    # 如果服务已存在，只更新配置文件
-    echo "dnsmasq service already exists, updating configuration..."
-
-    # 调用函数来配置DNS规则
-    configure_dns_rules
-
-    # 这里添加更新dnsmasq配置文件的命令
-    service dnsmasq restart
-else
+if ! command -v dnsmasq &>/dev/null; then
     # 如果服务不存在，执行安装和配置
     echo "dnsmasq service does not exist, installing and configuring..."
     # 安装dnsmasq
@@ -133,14 +127,14 @@ else
         systemctl disable systemd-resolved
     fi
 
-    # 调用函数来配置DNS规则
-    configure_dns_rules
-
     # 配置dnsmasq服务自动启动
-    chkconfig dnsmasq on
-    
-    # 重启dnsmasq服务
-    service dnsmasq restart
+    if [[ $(ps -p 1 -o comm=) == "systemd" ]]; then
+        # Systemd 系统
+        systemctl enable dnsmasq
+    else
+        # SysV Init 系统
+        chkconfig dnsmasq on
+    fi
 
     # 询问是否修改/etc/resolv.conf的nameserver为127.0.0.1
     read -p "Do you want to set nameserver in /etc/resolv.conf to 127.0.0.1? (y/n): " set_nameserver
@@ -152,4 +146,21 @@ else
     else
         echo "nameserver in /etc/resolv.conf remains unchanged."
     fi
+    
+else
+    # 如果服务已存在，只更新配置文件
+    echo "dnsmasq service already exists, updating configuration..."
 fi
+
+# 调用函数来配置DNS规则
+configure_dns_rules
+
+# 重启更新dnsmasq配置文件的
+if [[ $(ps -p 1 -o comm=) == "systemd" ]]; then
+    # Systemd 系统
+    systemctl restart dnsmasq
+else
+    # SysV Init 系统
+    service dnsmasq restart
+fi
+
