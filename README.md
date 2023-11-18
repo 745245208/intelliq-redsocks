@@ -193,16 +193,16 @@ dig @默认代理IP github.com
 dig @127.0.0.1 github.com
 ```
 
-如果不正常，使用以下命令检查 `pdnsd` 是否正常运行：
+如果不正常，使用以下命令检查 `dnsmasq` 是否正常运行：
 
 ```shell
-service pdnsd status
+service dnsmasq status
 ```
 
-如果 `pdnsd` 状态不正常，可以使用以下命令启动它：
+如果 `dnsmasq` 状态不正常，可以使用以下命令启动它：
 
 ```shell
-service pdnsd start
+service dnsmasq start
 ```
 
 ### 5. 检查 `/etc/resolv.conf`
